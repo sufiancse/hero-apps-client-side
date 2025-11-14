@@ -1,10 +1,44 @@
 import { DiVisualstudio } from "react-icons/di";
 import AppCard from "../ui/AppCard";
 
-import { useLoaderData } from "react-router";
+import { useEffect, useState } from "react";
 
 const AllAppsPage = () => {
-  const apps = useLoaderData();
+  const [apps, setApps] = useState([]);
+  const [totalApps, setTotalApps] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [sort, setSort] = useState("");
+  const [order, setOrder] = useState("");
+  const [searchText, setSearchText] = useState("");
+
+  const limit = 10;
+
+  useEffect(() => {
+    fetch(
+      `https://hero-apps-pagination-starter-server.vercel.app/apps?limit=${limit}&skip=${
+        currentPage * limit
+      }&sort=${sort}&order=${order}&search=${searchText}`
+    )
+      .then((data) => data.json())
+      .then((data) => {
+        setApps(data.apps);
+        setTotalApps(data.count);
+        const pages = Math.ceil(data.count / limit);
+        setTotalPages(pages);
+      });
+  }, [currentPage, sort, order, searchText]);
+
+  const handleSelect = (e) => {
+    const selectedValue = e.target.value;
+    setSort(selectedValue.split("-")[0]);
+    setOrder(selectedValue.split("-")[1]);
+  };
+
+  const handleSearch = (e) => {
+    setSearchText(e.target.value);
+  };
+
   return (
     <div>
       <title>All Apps | Hero Apps</title>
@@ -19,14 +53,17 @@ const AllAppsPage = () => {
         </p>
       </div>
       {/* Search and Count */}
-      <div className="w-11/12 mx-auto flex flex-col-reverse lg:flex-row gap-5 items-start justify-between lg:items-end mt-10">
+      <div
+        id="cardTop"
+        className="w-11/12 mx-auto flex flex-col-reverse lg:flex-row gap-5 items-start justify-between lg:items-end  pt-5"
+      >
         <div>
           <h2 className="text-lg underline font-bold">
-            ({apps.length}) Apps Found
+            ({totalApps}) Apps Found
           </h2>
         </div>
 
-        <form>
+        <form onChange={handleSearch}>
           <label className="input max-w-[300px] w-[300px] input-secondary">
             <svg
               className="h-[1em] opacity-50"
@@ -48,8 +85,8 @@ const AllAppsPage = () => {
           </label>
         </form>
 
-        <div className="">
-          <select className="select bg-white">
+        <div>
+          <select onChange={handleSelect} className="select bg-white">
             <option selected disabled={true}>
               Sort by <span className="text-xs">R / S / D</span>
             </option>
@@ -78,6 +115,41 @@ const AllAppsPage = () => {
           )}
         </div>
       </>
+
+      <div className="flex justify-center flex-wrap gap-1 mb-5 ">
+        {currentPage > 0 && (
+          <a href="#cardTop">
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="btn"
+            >
+              Prev
+            </button>
+          </a>
+        )}
+
+        {[...Array(totalPages).keys()].map((i) => (
+          <a href="#cardTop">
+            <button
+              onClick={() => setCurrentPage(i)}
+              className={`btn ${i === currentPage && "btn-primary"}`}
+            >
+              {i + 1}
+            </button>
+          </a>
+        ))}
+
+        {currentPage < totalPages - 1 && (
+          <a href="#cardTop">
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className={"btn"}
+            >
+              Next
+            </button>
+          </a>
+        )}
+      </div>
     </div>
   );
 };
